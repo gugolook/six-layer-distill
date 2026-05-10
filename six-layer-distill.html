@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六层蒸馏框架 · 快速填空版</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #13131a;
+    --card2: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --muted: #8888a0;
+    --accent: #6c63ff;
+    --accent2: #ff6b6b;
+    --green: #4ecdc4;
+    --yellow: #ffd93d;
+    --pink: #ff8fab;
+    --orange: #ff9f43;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; line-height: 1.7; }
+  .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 48px; }
+  .header .tag { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 4px 16px; border-radius: 20px; margin-bottom: 16px; }
+  .header h1 { font-size: 28px; font-weight: 800; margin-bottom: 12px; background: linear-gradient(135deg, var(--accent), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header p { color: var(--muted); font-size: 14px; }
+  .header .stats { display: flex; justify-content: center; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+  .header .stat { text-align: center; }
+  .header .stat .num { font-size: 24px; font-weight: 800; color: var(--green); }
+  .header .stat .label { font-size: 12px; color: var(--muted); }
+
+  /* PROGRESS */
+  .progress-wrap { background: var(--card2); border-radius: 8px; height: 8px; margin-bottom: 36px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 8px; transition: width 0.4s ease; width: 0%; }
+
+  /* LAYER */
+  .layer { margin-bottom: 40px; }
+  .layer-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .layer-num { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .layer-title { font-size: 18px; font-weight: 700; }
+  .layer-sub { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+
+  /* QUESTION */
+  .q-block { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .q-block.filled { border-color: var(--green); }
+  .q-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .q-num { width: 28px; height: 28px; background: var(--card2); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+  .q-block.filled .q-num { background: var(--green); color: #000; }
+  .q-text { font-size: 15px; font-weight: 600; }
+  .q-example { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .q-input { width: 100%; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; font-family: inherit; resize: vertical; min-height: 60px; transition: border-color 0.2s; }
+  .q-input:focus { outline: none; border-color: var(--accent); }
+  .q-char-count { text-align: right; font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ACTIONS */
+  .actions { display: flex; gap: 12px; justify-content: center; margin-top: 36px; flex-wrap: wrap; }
+  .btn { padding: 12px 32px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #7b73ff; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-success { background: var(--green); color: #000; }
+  .btn-success:hover { background: #6ee0d8; transform: translateY(-1px); }
+  .btn-danger { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-danger:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* EXPORT PANEL */
+  .export-panel { display: none; margin-top: 48px; }
+  .export-panel.show { display: block; }
+  .export-box { background: var(--card); border: 1px solid var(--green); border-radius: 12px; padding: 24px; }
+  .export-box h3 { margin-bottom: 16px; font-size: 18px; }
+  .export-text { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; max-height: 500px; overflow-y: auto; color: var(--text); }
+  .export-actions { display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .container { padding: 20px 12px; }
+    .header h1 { font-size: 22px; }
+    .q-block { padding: 16px; }
+    .btn { padding: 10px 20px; font-size: 14px; }
+  }
+
+
+  /* AI RESULT */
+  .ai-result { margin-top: 20px; background: var(--card); border: 1px solid var(--accent); border-radius: 12px; padding: 24px; }
+  .ai-result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .ai-result-header h3 { font-size: 16px; }
+  .ai-status { font-size: 12px; color: var(--muted); }
+  .ai-loading { display: flex; align-items: center; gap: 12px; padding: 20px; justify-content: center; color: var(--muted); font-size: 14px; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn-accent { background: var(--green); color: #000; }
+  .btn-accent:hover { background: #6ee0d8; transform: translateY(-1px); }
+  .btn-accent:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* API KEY CONFIG */
+  .api-config { margin-top: 40px; padding: 20px; background: var(--card2); border-radius: 12px; border: 1px solid var(--border); }
+  .api-config h3 { font-size: 14px; margin-bottom: 8px; }
+  .api-config p { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.6; }
+  .api-config .note { font-size: 11px; color: var(--accent); margin-top: 8px; }
+  .api-input-wrap { display: flex; gap: 8px; align-items: center; }
+  .api-input-wrap input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 14px; font-family: 'SF Mono', 'Cascadia Code', monospace; }
+  .api-input-wrap input:focus { outline: none; border-color: var(--accent); }
+  .api-input-wrap .btn { padding: 10px 16px; font-size: 12px; white-space: nowrap; }
+  .btn-mic { padding: 10px 14px; font-size: 18px; background: var(--accent); border: 1px solid var(--accent); color: #fff; cursor: pointer; transition: all 0.3s; border-radius: 8px; }
+  .btn-mic:hover { background: var(--border); }
+  .btn-mic.recording { background: #e74c3c; color: #fff; border-color: #c0392b; animation: mic-pulse 1s ease-in-out infinite; box-shadow: 0 0 12px rgba(231,76,60,0.5); }
+  @keyframes mic-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+  /* QUESTION INPUT WRAP (textarea + mic) */
+  .q-input-wrap { display: flex; gap: 8px; align-items: flex-start; }
+  .q-input-wrap .q-input { flex: 1; }
+  .q-input-wrap .btn-mic-q { padding: 10px 14px; font-size: 18px; background: var(--accent); border: 1px solid var(--accent); color: #fff; cursor: pointer; border-radius: 8px; transition: all 0.3s; flex-shrink: 0; }
+  .q-input-wrap .btn-mic-q:hover { background: var(--border); }
+  .q-input-wrap .btn-mic-q.recording { background: #e74c3c; border-color: #c0392b; animation: mic-pulse 1s ease-in-out infinite; box-shadow: 0 0 12px rgba(231,76,60,0.5); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--card2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="tag">AI 蒸馏工具 · v1.0</div>
+    <h1>六层蒸馏框架</h1>
+    <p>填完 24 题，生成完整的人物蒸馏报告，可直接发给 AI 做进一步分析</p>
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-filled">0</div><div class="label">已填</div></div>
+      <div class="stat"><div class="num">24</div><div class="label">总题数</div></div>
+      <div class="stat"><div class="num" id="stat-percent">0%</div><div class="label">完成度</div></div>
+    </div>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+
+  <!-- FORM -->
+  <form id="distill-form" autocomplete="off">
+    <!-- Framework data: layers, questions, examples -->
+  </form>
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="btn btn-success" id="btn-export" disabled>📋 生成报告</button>
+    <button class="btn btn-danger" id="btn-clear">🗑️ 清空全部</button>
+  </div>
+
+  <!-- EXPORT PANEL -->
+  <div class="export-panel" id="export-panel">
+    <div class="export-box">
+      <h3>📄 蒸馏报告 · 汇总</h3>
+      <div class="export-text" id="export-text"></div>
+      <div class="export-actions">
+        <button class="btn btn-primary" id="btn-copy">📋 复制</button>
+        <button class="btn btn-accent" id="btn-ai-diagnose">🤖 AI 诊断</button>
+        <button class="btn btn-success" id="btn-close-export">关闭</button>
+      </div>
+    </div>
+    <!-- AI RESULT -->
+    <div class="ai-result" id="ai-result" style="display:none;">
+      <div class="ai-result-header">
+        <h3>🧠 AI 诊断结果</h3>
+        <span class="ai-status" id="ai-status"></span>
+      </div>
+      <div class="ai-loading" id="ai-loading" style="display:none;">
+        <div class="spinner"></div>
+        <span>AI 正在分析中...</span>
+      </div>
+      <div class="export-text" id="ai-result-text"></div>
+    </div>
+  </div>
+
+  <!-- API CONFIG -->
+  <div class="api-config">
+    <h3>🔑 API 配置</h3>
+    <p>填入 DeepSeek API Key 才能使用 AI 诊断功能。如果你没有 API Key，联系我获取。</p>
+    <div class="api-input-wrap">
+      <input type="password" id="api-key-input" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+      <button class="btn btn-primary" id="btn-toggle-key" type="button">👁️</button>
+      <button class="btn-mic" id="btn-mic" type="button" title="语音输入 Key">🎤</button>
+    </div>
+    <div class="note">💡 Key 仅保存在你本地浏览器，不会上传到任何服务器。</div>
+  </div>
+
+<script>
+// ─── Framework data ───────────────────────────────────────────
+const LAYERS = [
+  {
+    id: 'L1',
+    title: '表达 DNA',
+    sub: '他用什么语言风格说事情？',
+    questions: [
+      { id: 'q1',  text: '他说话最明显的语气特征是什么？', example: '干脆利落、爱用比喻、喜欢反问、语速快、爱用短句、爱用数据说话、一本正经、喜欢自嘲……' },
+      { id: 'q2',  text: '他口头禅或高频词是什么？', example: '"本质上""这事很简单""你听我说""坦白讲""核心是""说白了""你懂我意思吗""对吧"……' },
+      { id: 'q3',  text: '他不擅长用什么方式表达？', example: '不会煽情、不善数据罗列、从不讲故事、不会画饼、不擅长客套、不会长篇大论、不善于安慰人……' },
+      { id: 'q4',  text: '他的文字风格最像谁？', example: '像吴晓波、像和菜头、像李诞、像罗振宇、像雷军、像乔布斯、像自家老爸……' },
+    ]
+  },
+  {
+    id: 'L2',
+    title: '心智模型',
+    sub: '他如何拆解和分析问题？',
+    questions: [
+      { id: 'q5',  text: '他拿到一个新问题，第一反应是什么？', example: '先问目的/先找反例/先分类/先量化/先找案例/先拆最小单元/先问谁做过/先画框架图……' },
+      { id: 'q6',  text: '他分析问题时最常用的框架是什么？', example: 'SWOT/第一性原理/博弈论/历史类比/金字塔原理/逆向思维/系统动力学/马斯洛需求层次……' },
+      { id: 'q7',  text: '他看问题的独特视角是什么？（别人想不到的角度）', example: '从供应链看流量、从心理学看商业、从历史看当下、从生物学看组织、从物理学看人性……' },
+      { id: 'q8',  text: '他解决问题时，最依赖什么资源？', example: '人脉、数据、经验直觉、反复试错、理论推导、团队讨论、请教前辈、外部报告……' },
+    ]
+  },
+  {
+    id: 'L3',
+    title: '决策启发式',
+    sub: '他快速判断的思维捷径是什么？',
+    questions: [
+      { id: 'q9',  text: '他做决策时最快能想到的判断标准是什么？', example: '能不能规模化/是不是在正确方向上/用户会不会骂/有没有复利/是不是趋势/团队能不能干/会不会亏钱/是不是时间窗口……' },
+      { id: 'q10', text: '什么信号会让他立刻否决一个选项？', example: '不合法的不做/超过认知边界不碰/没有复利不做/不赚钱的不做/不能学习的不做/用户不认可不做/不能规模化不做……' },
+      { id: 'q11', text: '他用什么指标衡量一件事值不值得做？', example: 'ROI/战略卡位价值/个人成长空间/团队士气影响/用户价值/技术壁垒/时间窗口/品牌积累……' },
+      { id: 'q12', text: '他做决策最看重什么？（速度/正确性/共识/执行……）', example: '速度优先、决策质量第一、拉齐共识再动、先跑起来再说、必须拿到数据才拍板、相信直觉快速试错、宁可慢不能错、先说服团队再推进……' },
+    ]
+  },
+  {
+    id: 'L4',
+    title: '反模式',
+    sub: '他绝对不会做的事是什么？',
+    questions: [
+      { id: 'q13', text: '他明确不会做的事是什么？', example: '不刷数据/不赚认知差/不做低质量扩张/不跟风/不打价格战/不烧钱换增长/不骗用户/不剥削员工/不出卖原则……' },
+      { id: 'q14', text: '他最讨厌的商业行为是什么？', example: '割韭菜/卷低价/蹭热点/讲故事骗人/弄虚作假/资本游戏/关系户/官僚主义/形式主义/996文化……' },
+      { id: 'q15', text: '什么情况下他会主动喊停一个项目？', example: '初心变了/用户骂了/团队散了/法律风险/持续亏损/市场变了/增长停滞/失去激情/被超越了……' },
+      { id: 'q16', text: '他的底线是什么？（什么情况绝对不妥协）', example: '产品质量/诚信/员工待遇/用户体验/不做假/不裁员/不放弃安全/不妥协价值观……' },
+    ]
+  },
+  {
+    id: 'L5',
+    title: '价值观',
+    sub: '什么对他来说绝对不可妥协？',
+    questions: [
+      { id: 'q17', text: '他的终极目标是什么？', example: '财务自由/行业影响力/做一家伟大的公司/自由生活/帮助更多人/改变世界/家庭幸福/自我实现……' },
+      { id: 'q18', text: '他最在乎的外部评价是什么？', example: '用户口碑/业内专业度/员工幸福指数/家人认可/同行尊重/投资人信任/社会价值/历史地位……' },
+      { id: 'q19', text: '他最不在乎的外界评价是什么？', example: '媒体曝光/竞争对手动作/短期股价/网络骂声/社交热度/行业排名/外人看法/流量数据……' },
+      { id: 'q20', text: '如果他的人生只剩一件事要做，是什么？', example: '培养接班人、写一本能留下来的书、做一个改变行业的产品、陪家人过简单生活、环游世界、办一所学校、赚够钱就退休、做公益回馈社会……' },
+    ]
+  },
+  {
+    id: 'L6',
+    title: '诚实边界',
+    sub: '他承认自己不知道什么？',
+    questions: [
+      { id: 'q21', text: '他公开承认过自己哪些能力短板？', example: '财务/管理/技术细节/公开演讲/谈判/社交/法律/营销/外语/执行力/战略眼光……' },
+      { id: 'q22', text: '他通常如何处理自己不懂的领域？', example: '找合伙人/快速学/外包/承认不懂/请顾问/看书恶补/找专家请教/直接放弃/先找现成工具……' },
+      { id: 'q23', text: '他踩过最大的坑是什么？现在怎么看？', example: '某次失败投资/某个错误用人/某次战略误判/过于冒进/过于保守/信错了人/错过了风口/没听劝告……' },
+      { id: 'q24', text: '用这 6 个维度去描述一个人，你觉得会漏掉什么？', example: '捕捉不到灰色地带、只能看到某一个时期的他、缺少环境对他的影响、有答案没行动、静态快照而非动态演化……' },
+    ]
+  }
+];
+
+// ─── State ────────────────────────────────────────────────────
+const STORAGE_KEY = 'distill-6layer-answers';
+const API_STORAGE_KEY = 'distill-6layer-api';
+let answers = {};
+
+// ─── DOM refs ─────────────────────────────────────────────────
+const formEl = document.getElementById('distill-form');
+const exportPanel = document.getElementById('export-panel');
+const exportText = document.getElementById('export-text');
+const btnExport = document.getElementById('btn-export');
+const btnClear = document.getElementById('btn-clear');
+const btnCopy = document.getElementById('btn-copy');
+const btnCloseExport = document.getElementById('btn-close-export');
+const statFilled = document.getElementById('stat-filled');
+const statPercent = document.getElementById('stat-percent');
+const progressBar = document.getElementById('progress-bar');
+
+const DEFAULT_API_CONFIG = {
+  url: 'https://api.deepseek.com/v1/chat/completions',
+  key: '',
+  model: 'deepseek-v4-flash'
+};
+
+// API config (persisted in localStorage, defaults in code)
+let apiConfig = loadApiConfig();
+const btnAiDiagnose = document.getElementById('btn-ai-diagnose');
+const aiResult = document.getElementById('ai-result');
+const aiResultText = document.getElementById('ai-result-text');
+const aiLoading = document.getElementById('ai-loading');
+const aiStatus = document.getElementById('ai-status');
+
+// ─── Init ─────────────────────────────────────────────────────
+function init() {
+  loadAnswers();
+  renderForm();
+  updateStats();
+  bindGlobalEvents();
+  // 绑定 API Key 输入框
+  const apiInput = document.getElementById('api-key-input');
+  if (apiInput) {
+    apiInput.value = apiConfig.key || '';
+    apiInput.addEventListener('input', () => {
+      apiConfig.key = apiInput.value;
+      saveApiConfig();
+    });
+  }
+  const btnToggle = document.getElementById('btn-toggle-key');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      const isPassword = apiInput.type === 'password';
+      apiInput.type = isPassword ? 'text' : 'password';
+      btnToggle.textContent = isPassword ? '🙈' : '👁️';
+    });
+  }
+  // ─── 通用语音输入 ─────────────────────────────────
+  function bindVoiceInput(btn, textarea) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { btn.disabled = true; btn.title = '浏览器不支持语音输入'; return; }
+    let recognition = null;
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('recording')) {
+        if (recognition) recognition.stop();
+        btn.classList.remove('recording');
+        btn.textContent = '🎤';
+      } else {
+        // 停止所有其他正在录音的按钮
+        document.querySelectorAll('.btn-mic.recording, .btn-mic-q.recording').forEach(b => {
+          b.classList.remove('recording');
+          b.textContent = '🎤';
+        });
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN';
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.onresult = (e) => {
+          let transcript = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            transcript += e.results[i][0].transcript;
+          }
+          textarea.value = transcript;
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        recognition.onerror = () => { btn.classList.remove('recording'); btn.textContent = '🎤'; };
+        recognition.onend = () => { btn.classList.remove('recording'); btn.textContent = '🎤'; };
+        recognition.start();
+        btn.classList.add('recording');
+        btn.textContent = '🔴';
+      }
+    });
+  }
+
+  // API Key 语音输入
+  const btnMic = document.getElementById('btn-mic');
+  if (btnMic) bindVoiceInput(btnMic, apiInput);
+
+  // 每题语音输入（事件委托，因为按钮是动态渲染的）
+  formEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-mic-q');
+    if (!btn) return;
+    const qid = btn.dataset.qid;
+    const textarea = document.querySelector(`textarea.q-input[data-qid="${qid}"]`);
+    if (textarea) bindVoiceInput(btn, textarea);
+  });
+}
+
+function loadApiConfig() {
+  try {
+    const saved = localStorage.getItem(API_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...DEFAULT_API_CONFIG, ...parsed };
+    }
+  } catch(e) {}
+  // First visit: save defaults to localStorage
+  localStorage.setItem(API_STORAGE_KEY, JSON.stringify(DEFAULT_API_CONFIG));
+  return { ...DEFAULT_API_CONFIG };
+}
+
+function saveApiConfig() {
+  localStorage.setItem(API_STORAGE_KEY, JSON.stringify(apiConfig));
+}
+
+function loadAnswers() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // verify all question ids exist
+      const allIds = LAYERS.flatMap(l => l.questions.map(q => q.id));
+      allIds.forEach(id => { if (!(id in parsed)) parsed[id] = ''; });
+      answers = parsed;
+    } else {
+      answers = {};
+      LAYERS.flatMap(l => l.questions).forEach(q => { answers[q.id] = ''; });
+    }
+  } catch(e) {
+    answers = {};
+    LAYERS.flatMap(l => l.questions).forEach(q => { answers[q.id] = ''; });
+  }
+}
+
+function saveAnswers() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+}
+
+// ─── Render ───────────────────────────────────────────────────
+function renderForm() {
+  let html = '';
+  LAYERS.forEach(layer => {
+    html += `<div class="layer">`;
+    html += `<div class="layer-header">`;
+    html += `<div class="layer-num">${layer.id.slice(1)}</div>`;
+    html += `<div class="layer-title">${layer.title} <span class="layer-sub">${layer.sub}</span></div>`;
+    html += `</div>`;
+
+    layer.questions.forEach((q, idx) => {
+      const val = answers[q.id] || '';
+      const filled = val.trim().length > 0;
+      html += `<div class="q-block ${filled ? 'filled' : ''}" data-qid="${q.id}">`;
+      html += `<div class="q-header">`;
+      html += `<div class="q-num">${q.id.replace('q', '')}</div>`;
+      html += `<div class="q-text">${q.text}</div>`;
+      html += `</div>`;
+      if (q.example) {
+        html += `<div class="q-example">💡 例：${q.example}</div>`;
+      }
+      html += `<div class="q-input-wrap">`;
+      html += `<textarea class="q-input" data-qid="${q.id}" placeholder="写下你的观察…" rows="2">${escapeHtml(val)}</textarea>`;
+      html += `<button class="btn-mic btn-mic-q" data-qid="${q.id}" type="button" title="语音输入">🎤</button>`;
+      html += `</div>`;
+      html += `<div class="q-char-count"><span id="count-${q.id}">${val.length}</span> 字</div>`;
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+  });
+  formEl.innerHTML = html;
+
+  // bind input events
+  formEl.querySelectorAll('.q-input').forEach(textarea => {
+    textarea.addEventListener('input', onInput);
+    // auto-resize
+    autoResize(textarea);
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.max(60, el.scrollHeight) + 'px';
+}
+
+function onInput(e) {
+  const textarea = e.target;
+  const qid = textarea.dataset.qid;
+  answers[qid] = textarea.value;
+  saveAnswers();
+  updateStats();
+  autoResize(textarea);
+
+  // toggle filled class
+  const block = textarea.closest('.q-block');
+  if (textarea.value.trim().length > 0) {
+    block.classList.add('filled');
+  } else {
+    block.classList.remove('filled');
+  }
+
+  // update char count
+  const countEl = document.getElementById(`count-${qid}`);
+  if (countEl) countEl.textContent = textarea.value.length;
+}
+
+// ─── Stats ────────────────────────────────────────────────────
+function updateStats() {
+  const total = 24;
+  let filled = 0;
+  LAYERS.flatMap(l => l.questions).forEach(q => {
+    if ((answers[q.id] || '').trim().length > 0) filled++;
+  });
+  const pct = Math.round((filled / total) * 100);
+  statFilled.textContent = filled;
+  statPercent.textContent = pct + '%';
+  progressBar.style.width = pct + '%';
+  btnExport.disabled = filled === 0;
+}
+
+// ─── Export / Report ──────────────────────────────────────────
+function generateReport() {
+  const lines = [];
+  lines.push('# 六层蒸馏报告');
+  lines.push('');
+  lines.push(`> 生成时间：${new Date().toLocaleString('zh-CN')}`);
+  lines.push('');
+
+  LAYERS.forEach(layer => {
+    lines.push(`---`);
+    lines.push(`## ${layer.id} · ${layer.title}`);
+    lines.push(`> ${layer.sub}`);
+    lines.push('');
+
+    layer.questions.forEach((q, idx) => {
+      const val = (answers[q.id] || '').trim();
+      lines.push(`**Q${q.id.replace('q', '')}：${q.text}**`);
+      lines.push(val || '（未填写）');
+      lines.push('');
+    });
+  });
+
+  lines.push(`---`);
+  lines.push('');
+  lines.push(`> 请根据以上六层蒸馏填空内容，生成 [人物名] 的完整蒸馏报告，要求：
+> 1. 还原他的思维决策路径
+> 2. 提炼他最值得学习的 3 个思维习惯
+> 3. 指出他的认知盲区
+> 4. 给出如何在实战中借鉴的建议`);
+
+  return lines.join('\n');
+}
+
+function showExport() {
+  const report = generateReport();
+  exportText.textContent = report;
+  exportPanel.classList.add('show');
+  exportPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── AI Diagnosis ────────────────────────────────────────────
+const AI_PROMPT = `你是一位顶级的思维框架分析师。请根据以下六层蒸馏填空内容，生成一份完整的人物思维蒸馏报告。
+
+要求输出以下内容：
+1. **他的思维决策路径** — 从表达DNA到诚实边界，串联他是如何思考、判断和行动的
+2. **他最值得学习的 3 个思维习惯** — 具体、可复制
+3. **他的认知盲区** — 基于他答案中的矛盾和缺口
+4. **如何在实战中借鉴** — 给想学习他的人具体建议
+
+在报告末尾加上一句「基于六层蒸馏框架 · 快速填空版」的诊断总结。`;
+
+async function callAiDiagnose(reportContent) {
+  const { url, key, model } = apiConfig;
+
+  if (!url) throw new Error('请填写 API 地址');
+  if (!key) throw new Error('请填写 API Key');
+  if (!model) throw new Error('请填写模型名称');
+
+  const messages = [
+    { role: 'system', content: AI_PROMPT },
+    { role: 'user', content: reportContent }
+  ];
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 4096
+    })
+  });
+
+  if (!response.ok) {
+    let errMsg = `HTTP ${response.status}`;
+    try {
+      const errBody = await response.json();
+      errMsg = errBody.error?.message || JSON.stringify(errBody);
+    } catch(e) {}
+    throw new Error(`API 请求失败: ${errMsg}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || 'AI 未返回有效内容';
+}
+
+async function handleAiDiagnose() {
+  const report = generateReport();
+  btnAiDiagnose.disabled = true;
+  btnAiDiagnose.textContent = '⏳ 诊断中...';
+  aiResult.style.display = 'block';
+  aiLoading.style.display = 'flex';
+  aiResultText.textContent = '';
+  aiStatus.textContent = '连接中...';
+  aiResultText.style.display = 'none';
+
+  try {
+    aiStatus.textContent = 'AI 正在分析...';
+    const result = await callAiDiagnose(report);
+    aiResultText.textContent = result;
+    aiResultText.style.display = 'block';
+    aiLoading.style.display = 'none';
+    aiStatus.textContent = '✅ 完成';
+  } catch (err) {
+    aiLoading.style.display = 'none';
+    aiResultText.textContent = `❌ ${err.message}`;
+    aiResultText.style.display = 'block';
+    aiStatus.textContent = '❌ 失败';
+  } finally {
+    btnAiDiagnose.disabled = false;
+    btnAiDiagnose.textContent = '🤖 AI 诊断';
+  }
+}
+function bindGlobalEvents() {
+  // AI diagnosis
+  btnAiDiagnose.addEventListener('click', handleAiDiagnose);
+
+  btnExport.addEventListener('click', showExport);
+
+  btnCloseExport.addEventListener('click', () => {
+    exportPanel.classList.remove('show');
+  });
+
+  btnCopy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(exportText.textContent);
+      const orig = btnCopy.textContent;
+      btnCopy.textContent = '✅ 已复制';
+      setTimeout(() => { btnCopy.textContent = orig; }, 2000);
+    } catch(e) {
+      // fallback
+      const range = document.createRange();
+      range.selectNode(exportText);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand('copy');
+      window.getSelection().removeAllRanges();
+      const orig = btnCopy.textContent;
+      btnCopy.textContent = '✅ 已复制';
+      setTimeout(() => { btnCopy.textContent = orig; }, 2000);
+    }
+  });
+
+  btnClear.addEventListener('click', () => {
+    if (!confirm('确定清空所有答案？此操作不可撤销。')) return;
+    LAYERS.flatMap(l => l.questions).forEach(q => { answers[q.id] = ''; });
+    saveAnswers();
+    renderForm();
+    updateStats();
+    exportPanel.classList.remove('show');
+  });
+}
+
+// ─── Boot ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
